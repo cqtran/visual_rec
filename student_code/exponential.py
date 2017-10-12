@@ -23,20 +23,20 @@ def run(x_test):
     yvalidation = mnist.validation.labels
 
     n_inputs = 28 * 28
-    batch_size = 200
-    n_classes = 10
+    batch_size = 100
 
     X = tf.placeholder(tf.float32,[None, n_inputs])
     y = tf.placeholder(tf.float32,[batch_size, 1])
     
-    lr = 0.0001 # learning rate
-    lam_val = 1 # regularization parameter
+    lr = 0.000000000001 # learning rate
+    lam_val = 0.001 # regularization parameter
 
     def get_training_op(score, W):
+        # mean squared error as loss function
         l2_loss = 0.5 * lam_val * tf.reduce_mean(tf.square(W))
-        hinge_loss = lam_val * tf.reduce_sum(tf.maximum(tf.zeros([batch_size,10]), 1 - y*score))
-        loss = l2_loss + hinge_loss
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate = lr)
+        exp_loss = lam_val * tf.exp((tf.negative(y))*score)
+        loss = l2_loss + exp_loss
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate = lr) # another better optimizer
         training_op = optimizer.minimize(loss)
         return training_op
 
@@ -45,7 +45,7 @@ def run(x_test):
     scores = []
     training_ops = []
 
-    for i in range(n_classes):
+    for i in range(10):
         W = tf.Variable(tf.random_normal([n_inputs, 1]))
         b = tf.Variable(tf.zeros([1]))
         score = tf.matmul(X,W) + b
@@ -69,8 +69,7 @@ def run(x_test):
             for iteration in range(n_batches):
                 X_batch,y_batch = mnist.train.next_batch(batch_size)
 
-                for i in range(n_classes):
-                    # Convert data to [1, -1]
+                for i in range(10):
                     y_vector = np.array([1 if y==i else -1 for y in y_batch])
 
                     y_vector = y_vector.reshape(batch_size, 1)
@@ -82,8 +81,9 @@ def run(x_test):
         # Now that the model is trained, it is the test time!
 
         yp_tests = []
-        for i in range(n_classes):
+        for i in range(10):
             yp = scores[i].eval(feed_dict={X:x_test, W:weights[i].eval(), b:biases[i].eval()})
+            print(yp)
             yp_tests.append(yp)
         
         for i in range(len(x_test)):
@@ -94,7 +94,7 @@ def run(x_test):
                     max_score = test[i]
                     predicted_class = index
             y_predicted_test.append(predicted_class)
-
+        print(y_predicted_test)
         return y_predicted_test
 
 
