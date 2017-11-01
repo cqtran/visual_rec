@@ -23,16 +23,18 @@ def net(x, is_training, dropout_kept_prob):
   weights = {'W_conv1':tf.Variable(tf.random_normal([5, 5, 3, 64])),
              'W_conv2':tf.Variable(tf.random_normal([5, 5, 64, 64])),
              'W_conv3':tf.Variable(tf.random_normal([5, 5, 64, 128])),
-             'W_conv4':tf.Variable(tf.random_normal([3, 3, 128, 128])),
-             'W_fc':tf.Variable(tf.random_normal([4*4*128, 384])),
-             'output':tf.Variable(tf.random_normal([384, NUM_CLASSES]))}
+             #'W_conv4':tf.Variable(tf.random_normal([3, 3, 128, 128])),
+             'W_fc':tf.Variable(tf.random_normal([4*4*128, 512])),
+             'W_fc1':tf.Variable(tf.random_normal([4*4*128, 256])),
+             'output':tf.Variable(tf.random_normal([256, NUM_CLASSES]))}
 
   # Initialize biases dictionary
   biases = {'b_conv1':tf.Variable(tf.random_normal([64])),
             'b_conv2':tf.Variable(tf.random_normal([64])),
             'b_conv3':tf.Variable(tf.random_normal([128])),
-            'b_conv4':tf.Variable(tf.random_normal([128])),
-            'b_fc':tf.Variable(tf.random_normal([384])),
+           # 'b_conv4':tf.Variable(tf.random_normal([128])),
+            'b_fc':tf.Variable(tf.random_normal([512])),
+            'b_fc1':tf.Variable(tf.random_normal([256])),
             'output':tf.Variable(tf.random_normal([NUM_CLASSES]))}
 
   # Layer 1
@@ -50,20 +52,24 @@ def net(x, is_training, dropout_kept_prob):
   conv3 = conv_2d(conv2, weights['W_conv3']) + biases['b_conv3']
   conv3 = tf.nn.relu(conv3)
 
-  # Layer 4
-  conv4 = conv_2d(conv3, weights['W_conv4']) + biases['b_conv4']
-  conv4 = tf.nn.relu(conv4)  # Skip connection from Layer 3
-  conv4 = maxpool_2d(conv4)
+#  # Layer 4
+#  conv4 = conv_2d(conv3, weights['W_conv4']) + biases['b_conv4']
+#  conv4 = tf.nn.relu(conv4)  # Skip connection from Layer 3
+#  conv4 = maxpool_2d(conv4)
 
-  # Fully Connected Layer 5
-  fc = tf.reshape(conv4, [-1, 4*4*128])
+  # Fully Connected Layer 4
+  fc = tf.reshape(conv3, [-1, 4*4*128])
   fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
 
+  # Fully Connected Layer 5
+  fc1 = tf.reshape(fc, [-1, 4*4*128])
+  fc1 = tf.nn.relu(tf.matmul(fc1, weights['W_fc1']) + biases['b_fc1'])
+
   # Apply dropout
-  fc = tf.nn.dropout(fc, dropout_kept_prob)
+  fc1 = tf.nn.dropout(fc1, dropout_kept_prob)
 
   # Output
-  output = tf.matmul(fc, weights['output']) + biases['output']
+  output = tf.matmul(fc1, weights['output']) + biases['output']
 
   return output
 
