@@ -64,7 +64,7 @@ def net(x, is_training, dropout_kept_prob):
 
   # Output
   output = tf.matmul(fc, weights['output']) + biases['output']
-  print(output.shape)
+
   return output
 
 def train():
@@ -87,10 +87,10 @@ def train():
   num_samples = cifar10_train.num_samples
 
   # Define placeholder variable for input images
-  x = tf.placeholder(tf.float32, shape=[BATCH_SIZE, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="x")
+  x = tf.placeholder(tf.float32, shape=[None, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="x")
   
   # Define placeholder variable for true labels
-  y = tf.placeholder(tf.float32, shape=[BATCH_SIZE, NUM_CLASSES], name="y")
+  y = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES], name="y")
 
   x_input = tf.reshape(x, [-1, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="input")
 
@@ -100,34 +100,37 @@ def train():
   output = net(x_input, True, keep_prob)
 
   # Get loss
-  '''
+
   loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output, labels=y))
   optimizer = tf.train.RMSPropOptimizer(learning_rate=lr).minimize(loss)
 
   init = tf.global_variables_initializer()
   saver = tf.train.Saver()
-  epochs = 10  
+  epochs = 10
+
+  correct = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
+  acc = tf.reduce_mean(tf.cast(correct, tf.float32))
 
   with tf.Session() as sess:
     sess.run(init)
 
     for epoch in range(epochs):
       num_batches = num_samples // BATCH_SIZE
-      epoch_loss = 0
+      print('Epoch:', epoch)     
+
       for iteration in range(num_batches):
         x_batch, y_batch = cifar10_train.get_next_batch()
-        _loss, batch_acc = sess.run([optimizer, loss], feed_dict={x: x_batch, y: y_batch})
-        saver.save(sess, save_path='/Users/sharidanbarboza/328_notebooks/Assignment2/')
-        epoch_loss += _loss
+        _, cost = sess.run([optimizer, loss], feed_dict={x: x_batch, y: y_batch})
 
-        print('Epoch', epoch, 'Loss:', epoch_loss)
+        if iteration % 50 == 0:
+          print('Step:', iteration, 'Loss:', cost)
 
-    correct = tf.equal(tf.argmax(output, 1), tf.argmax(y,1))
-    acc = tf.reduce_mean(tf.cast(correct, 'float'))
-    print('Accuracy:', acc.eval({x:cifar10_test_images, y:cifar10_train_labels}))
+      accuracy = sess.run(acc, feed_dict={x:x_batch, y:y_batch})
+      print('Accuracy:', accuracy)
+      saver.save(sess, 'my-model')
 
+    
   raise NotImplementedError
-  '''
 
 def test(cifar10_test_images):
   # Always use tf.reset_default_graph() to avoid error
@@ -140,4 +143,21 @@ def test(cifar10_test_images):
   # - Run testing
   # DO NOT RUN TRAINING HERE!
   # LOAD THE MODEL AND RUN TEST ON THE TEST SET
+
+  # Define placeholder variable for input images
+  x = tf.placeholder(tf.float32, shape=[None, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="x")
+  
+  # Define placeholder variable for true labels
+  y = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES], name="y")
+
+  x_input = tf.reshape(x, [-1, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="input")
+
+  keep_prob = 0.5
+
+  # Load the saved model
+  new_saver = tf.train.import_meta_graph('my-model.meta')
+
+  with tf.Session as sess:
+    new_saver.restore(sess, tf.train.latest_checkpoint('./'))
+
   raise NotImplementedError

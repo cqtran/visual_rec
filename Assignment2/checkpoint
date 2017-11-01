@@ -1,2 +1,2 @@
-model_checkpoint_path: "/Users/sharidanbarboza/328_notebooks/Assignment2/"
-all_model_checkpoint_paths: "/Users/sharidanbarboza/328_notebooks/Assignment2/"
+model_checkpoint_path: "my-model"
+all_model_checkpoint_paths: "my-model"
