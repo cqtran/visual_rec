@@ -5,7 +5,7 @@ from cifar10 import Cifar10
 NUM_CLASSES = 10
 IMG_SIZE = 32
 NUM_CHANNELS = 3
-BATCH_SIZE = 10
+BATCH_SIZE = 100
 
 def net(x, is_training, dropout_kept_prob):
   # TODO: Write your network architecture here
@@ -22,16 +22,18 @@ def net(x, is_training, dropout_kept_prob):
   W_conv1 = tf.Variable(tf.random_normal([5, 5, 3, 64]), name='W_conv1')
   W_conv2 = tf.Variable(tf.random_normal([5, 5, 64, 64]), name='W_conv2')
   W_conv3 = tf.Variable(tf.random_normal([5, 5, 64, 128]), name='W_conv3')
-  W_fc = tf.Variable(tf.random_normal([4*4*128, 512]), name='W_fc')
-  W_fc1 = tf.Variable(tf.random_normal([4*4*128, 256]), name='W_fc1')
-  w_output = tf.Variable(tf.random_normal([256, NUM_CLASSES]), name='w_output')
+  W_conv4 = tf.Variable(tf.random_normal([5, 5, 128, 128]), name='W_conv4')
+  W_fc = tf.Variable(tf.random_normal([4*4*128, 384]), name='W_fc')
+  #W_fc1 = tf.Variable(tf.random_normal([4*4*128, 256]), name='W_fc1')
+  w_output = tf.Variable(tf.random_normal([384, NUM_CLASSES]), name='w_output')
   
   # Biases
   b_conv1 = tf.Variable(tf.random_normal([64]), name='b_conv1')
   b_conv2 = tf.Variable(tf.random_normal([64]), name='b_conv2')
   b_conv3 = tf.Variable(tf.random_normal([128]), name='b_conv3')
-  b_fc = tf.Variable(tf.random_normal([512]), name='b_fc')
-  b_fc1 = tf.Variable(tf.random_normal([256]), name='b_fc1')
+  b_conv4 = tf.Variable(tf.random_normal([128]), name='b_conv4')
+  b_fc = tf.Variable(tf.random_normal([384]), name='b_fc')
+ # b_fc1 = tf.Variable(tf.random_normal([256]), name='b_fc1')
   b_output = tf.Variable(tf.random_normal([NUM_CLASSES]), name='b_output')
   
 
@@ -57,23 +59,23 @@ def net(x, is_training, dropout_kept_prob):
   conv3 = tf.nn.relu(conv3)
 
 #  # Layer 4
-#  conv4 = conv_2d(conv3, weights['W_conv4']) + biases['b_conv4']
-#  conv4 = tf.nn.relu(conv4)  # Skip connection from Layer 3
-#  conv4 = maxpool_2d(conv4)
+  conv4 = conv_2d(conv3, W_conv4) + b_conv4
+  conv4 = tf.nn.relu(conv4)  # Skip connection from Layer 3
+  conv4 = maxpool_2d(conv4)
 
   # Fully Connected Layer 4
-  fc = tf.reshape(conv3, [-1, 4*4*128])
+  fc = tf.reshape(conv4, [-1, 4*4*128])
   fc = tf.nn.relu(tf.matmul(fc, W_fc) + b_fc)
 
   # Fully Connected Layer 5
-  fc1 = tf.reshape(fc, [-1, 4*4*128])
-  fc1 = tf.nn.relu(tf.matmul(fc1, W_fc1) + b_fc1)
+ # fc1 = tf.reshape(fc, [-1, 4*4*128])
+ # fc1 = tf.nn.relu(tf.matmul(fc1, W_fc1) + b_fc1)
 
   # Apply dropout
-  fc1 = tf.nn.dropout(fc1, dropout_kept_prob)
+  #fc = tf.nn.dropout(fc, dropout_kept_prob)
 
   # Output
-  output = tf.matmul(fc1, w_output) + b_output
+  output = tf.matmul(fc, w_output) + b_output
 
   return output
 
@@ -122,6 +124,9 @@ def train():
 
     with tf.Session() as sess:
       sess.run(init)
+      
+      correct = tf.equal(tf.argmax(output, 1), tf.argmax(y,1))
+      accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
 
       for epoch in range(epochs):
         avg_cost = 0
@@ -133,7 +138,10 @@ def train():
           avg_cost += cost / num_batches
 
           if iteration % 50 == 0:
-            print('Step:', iteration, 'Cost:', cost)
+          	_loss, batch_acc = sess.run([loss, accuracy], feed_dict={x:x_batch, y:y_batch})
+          	print("Step:", iteration, "Loss:", _loss, "Batch accuracy:", batch_acc)
+
+            
 
         print('Epoch:', epoch, 'Average cost:', avg_cost)
 
@@ -179,10 +187,12 @@ def test(cifar10_test_images):
         'b_conv2:0': sess.run('b_conv2:0'),
         'W_conv3:0': sess.run('W_conv3:0'),
         'b_conv3:0': sess.run('b_conv3:0'),
+        'W_conv4:0': sess.run('W_conv4:0'),
+        'b_conv4:0': sess.run('b_conv4:0'),
         'W_fc:0': sess.run('W_fc:0'),
         'b_fc:0': sess.run('b_fc:0'),
-        'W_fc1:0': sess.run('W_fc1:0'),
-        'b_fc1:0': sess.run('b_fc1:0')
+       #'W_fc1:0': sess.run('W_fc1:0'),
+       # 'b_fc1:0': sess.run('b_fc1:0')
       }
 
       labels = []

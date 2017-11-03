@@ -8,9 +8,9 @@ from cifar10 import Cifar10
 
 
 if __name__ == '__main__':
-    TRAIN = True
+    TRAIN = False
     if TRAIN:
-        train()
+      train()
         
 
     cifar10_test = Cifar10(test=True, shuffle=False, one_hot=False)
