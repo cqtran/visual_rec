@@ -9,161 +9,199 @@ BATCH_SIZE = 100
 
 
 def net(x, is_training, dropout_kept_prob):
-  # TODO: Write your network architecture here
-  # Or you can write it inside train() function
-  # Requirements:
-  # - At least 5 layers in total
-  # - At least 1 fully connected and 1 convolutional layer
-  # - At least one maxpool layers
-  # - At least one batch norm
-  # - At least one skip connection
-  # - Use dropout
+    # TODO: Write your network architecture here
+    # Or you can write it inside train() function
+    # Requirements:
+    # - At least 5 layers in total
+    # - At least 1 fully connected and 1 convolutional layer
+    # - At least one maxpool layers
+    # - At least one batch norm
+    # - At least one skip connection
+    # - Use dropout
 
-  # Initialize weights dictionary
-  weights = {'W_conv1':tf.Variable(tf.random_normal([5, 5, 3, 64])),
-             'W_conv2':tf.Variable(tf.random_normal([5, 5, 64, 64])),
-             'W_conv3':tf.Variable(tf.random_normal([5, 5, 64, 128])),
-             #'W_conv4':tf.Variable(tf.random_normal([3, 3, 128, 128])),
-             'W_fc':tf.Variable(tf.random_normal([4*4*128, 512])),
-             'W_fc1':tf.Variable(tf.random_normal([4*4*128, 256])),
-             'output':tf.Variable(tf.random_normal([256, NUM_CLASSES]))}
+    # Weights
+    W_conv1 = tf.Variable(tf.random_normal([5, 5, 3, 64]), name='W_conv1')
+    W_conv2 = tf.Variable(tf.random_normal([5, 5, 64, 64]), name='W_conv2')
+    W_conv3 = tf.Variable(tf.random_normal([5, 5, 64, 128]), name='W_conv3')
+    W_conv4 = tf.Variable(tf.random_normal([5, 5, 128, 128]), name='W_conv4')
+    W_fc = tf.Variable(tf.random_normal([4 * 4 * 128, 384]), name='W_fc')
+    W_fc1 = tf.Variable(tf.random_normal([4*4*128, 256]), name='W_fc1')
+    w_output = tf.Variable(tf.random_normal([384, NUM_CLASSES]), name='w_output')
 
-  # Initialize biases dictionary
-  biases = {'b_conv1':tf.Variable(tf.random_normal([64])),
-            'b_conv2':tf.Variable(tf.random_normal([64])),
-            'b_conv3':tf.Variable(tf.random_normal([128])),
-           # 'b_conv4':tf.Variable(tf.random_normal([128])),
-            'b_fc':tf.Variable(tf.random_normal([512])),
-            'b_fc1':tf.Variable(tf.random_normal([256])),
-            'output':tf.Variable(tf.random_normal([NUM_CLASSES]))}
+    # Biases
+    b_conv1 = tf.Variable(tf.random_normal([64]), name='b_conv1')
+    b_conv2 = tf.Variable(tf.random_normal([64]), name='b_conv2')
+    b_conv3 = tf.Variable(tf.random_normal([128]), name='b_conv3')
+    b_conv4 = tf.Variable(tf.random_normal([128]), name='b_conv4')
+    b_fc = tf.Variable(tf.random_normal([384]), name='b_fc')
+    b_fc1 = tf.Variable(tf.random_normal([256]), name='b_fc1')
+    b_output = tf.Variable(tf.random_normal([NUM_CLASSES]), name='b_output')
 
-  # Layer 1
-  conv1 = conv_2d(x, weights['W_conv1']) + biases['b_conv1'] 
-  conv1 = tf.nn.relu(conv1)
-  conv1 = maxpool_2d(conv1)
+    # Layer 1
+    conv1 = conv_2d(x, W_conv1) + b_conv1
+    conv1 = tf.nn.relu(conv1)
+    conv1 = maxpool_2d(conv1)
 
-  # Layer 2
-  conv2 = conv_2d(conv1, weights['W_conv2']) + biases['b_conv2']
-  conv2 = batch_norm(conv2, is_training) + conv1
-  conv2 = tf.nn.relu(conv2)
-  conv2 = maxpool_2d(conv2)
-  
-  # Layer 3
-  conv3 = conv_2d(conv2, weights['W_conv3']) + biases['b_conv3']
-  conv3 = tf.nn.relu(conv3)
+    # Layer 2
+    conv2 = conv_2d(conv1, W_conv2) + b_conv2
+    conv2 = batch_norm(conv2, is_training) + conv1
+    conv2 = tf.nn.relu(conv2)
+    conv2 = maxpool_2d(conv2)
 
-#  # Layer 4
-#  conv4 = conv_2d(conv3, weights['W_conv4']) + biases['b_conv4']
-#  conv4 = tf.nn.relu(conv4)  # Skip connection from Layer 3
-#  conv4 = maxpool_2d(conv4)
+    # Layer 3
+    conv3 = conv_2d(conv2, W_conv3) + b_conv3
+    conv3 = tf.nn.relu(conv3)
 
-  # Fully Connected Layer 4
-  fc = tf.reshape(conv3, [-1, 4*4*128])
-  fc = tf.nn.relu(tf.matmul(fc, weights['W_fc']) + biases['b_fc'])
+    #  # Layer 4
+    conv4 = conv_2d(conv3, W_conv4) + b_conv4
+    conv4 = tf.nn.relu(conv4)  # Skip connection from Layer 3
+    conv4 = maxpool_2d(conv4)
 
-  # Fully Connected Layer 5
-  fc1 = tf.reshape(fc, [-1, 4*4*128])
-  fc1 = tf.nn.relu(tf.matmul(fc1, weights['W_fc1']) + biases['b_fc1'])
+    # Fully Connected Layer 4
+    fc = tf.reshape(conv4, [-1, 4 * 4 * 128])
+    fc = tf.nn.relu(tf.matmul(fc, W_fc) + b_fc)
 
-  # Apply dropout
-  fc1 = tf.nn.dropout(fc1, dropout_kept_prob)
+    # Fully Connected Layer 5
+    # fc1 = tf.reshape(fc, [-1, 4*4*128])
+    # fc1 = tf.nn.relu(tf.matmul(fc1, W_fc1) + b_fc1)
 
-  # Output
-  output = tf.matmul(fc1, weights['output']) + biases['output']
+    # Apply dropout
+    # fc = tf.nn.dropout(fc, dropout_kept_prob)
 
-  return output
+    # Output
+    output = tf.matmul(fc, w_output) + b_output
+
+    return output
+
 
 def train():
-  # Always use tf.reset_default_graph() to avoid error
-  tf.reset_default_graph()
-  # TODO: Write your training code here
-  # - Create placeholder for inputs, training boolean, dropout keep probablity
-  # - Construct your model
-  # - Create loss and training op
-  # - Run training
-  # AS IT WILL TAKE VERY LONG ON CIFAR10 DATASET TO TRAIN
-  # YOU SHOULD USE tf.train.Saver() TO SAVE YOUR MODEL AFTER TRAINING
-  # AT TEST TIME, LOAD THE MODEL AND RUN TEST ON THE TEST SET
+    # Always use tf.reset_default_graph() to avoid error
+    tf.reset_default_graph()
+    # TODO: Write your training code here
+    # - Create placeholder for inputs, training boolean, dropout keep probablity
+    # - Construct your model
+    # - Create loss and training op
+    # - Run training
+    # AS IT WILL TAKE VERY LONG ON CIFAR10 DATASET TO TRAIN
+    # YOU SHOULD USE tf.train.Saver() TO SAVE YOUR MODEL AFTER TRAINING
+    # AT TEST TIME, LOAD THE MODEL AND RUN TEST ON THE TEST SET
 
-  # Load CIFAR-10 training data
-  cifar10_train = Cifar10(batch_size=BATCH_SIZE, one_hot=True, test=False, shuffle=True)
-  cifar10_train_images = cifar10_train._images # 50000
-  cifar10_train_labels = cifar10_train._labels # 50000
+    with tf.Graph().as_default() as g:
 
-  num_samples = cifar10_train.num_samples
+        # Load CIFAR-10 training data
+        cifar10_train = Cifar10(batch_size=BATCH_SIZE, one_hot=True, test=False, shuffle=True)
+        cifar10_train_images = cifar10_train._images  # 50000
+        cifar10_train_labels = cifar10_train._labels  # 50000
 
-  # Define placeholder variable for input images
-  x = tf.placeholder(tf.float32, shape=[None, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="x")
-  
-  # Define placeholder variable for true labels
-  y = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES], name="y")
+        num_samples = cifar10_train.num_samples
 
-  x_input = tf.reshape(x, [-1, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="input")
+        # Define placeholder variable for input images
+        x = tf.placeholder(tf.float32, shape=[None, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="x")
 
-  keep_prob = 0.5
-  lr = 0.0001
+        # Define placeholder variable for true labels
+        y = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES], name="y")
 
-  output = net(x_input, True, keep_prob)
+        x_input = tf.reshape(x, [-1, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="input")
 
-  # Get loss
+        keep_prob = 0.5
+        lr = 0.0001
 
-  loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output, labels=y))
-  optimizer = tf.train.RMSPropOptimizer(learning_rate=lr).minimize(loss)
+        output = net(x_input, True, keep_prob)
+        print(output.shape)
 
-  init = tf.global_variables_initializer()
-  saver = tf.train.Saver()
-  epochs = 10
+        # Get loss
+        loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=output, labels=y))
+        optimizer = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 
-  correct = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
-  acc = tf.reduce_mean(tf.cast(correct, tf.float32))
+        init = tf.global_variables_initializer()
+        saver = tf.train.Saver()
+        epochs = 5
 
-  with tf.Session() as sess:
-    sess.run(init)
+        with tf.Session() as sess:
+            sess.run(init)
 
-    for epoch in range(epochs):
-      num_batches = num_samples // BATCH_SIZE
-      print('Epoch:', epoch)     
+            correct = tf.equal(tf.argmax(output, 1), tf.argmax(y, 1))
+            accuracy = tf.reduce_mean(tf.cast(correct, tf.float32))
 
-      for iteration in range(num_batches):
-        x_batch, y_batch = cifar10_train.get_next_batch()
-        _, cost = sess.run([optimizer, loss], feed_dict={x: x_batch, y: y_batch})
+            for epoch in range(epochs):
+                avg_cost = 0
+                num_batches = num_samples // BATCH_SIZE
 
-        if iteration % 50 == 0:
-          print('Step:', iteration, 'Loss:', cost)
+                for iteration in range(num_batches):
+                    x_batch, y_batch = cifar10_train.get_next_batch()
+                    _, cost = sess.run([optimizer, loss], feed_dict={x: x_batch, y: y_batch})
+                    avg_cost += cost / num_batches
 
-      accuracy = sess.run(acc, feed_dict={x:x_batch, y:y_batch})
-      print('Accuracy:', accuracy)
-      saver.save(sess, 'my-model')
+                    if iteration % 50 == 0:
+                        _loss, batch_acc = sess.run([loss, accuracy], feed_dict={x: x_batch, y: y_batch})
+                        print("Step:", iteration, "Loss:", _loss, "Batch accuracy:", batch_acc)
 
-    
-  raise NotImplementedError
+                print('Epoch:', epoch, 'Average cost:', avg_cost)
+
+            saver.save(sess, './my_test_model')
+
 
 def test(cifar10_test_images):
-  # Always use tf.reset_default_graph() to avoid error
-  tf.reset_default_graph()
-  # TODO: Write your testing code here
-  # - Create placeholder for inputs, training boolean, dropout keep probablity
-  # - Construct your model
-  # (Above 2 steps should be the same as in train function)
-  # - Create label prediction tensor
-  # - Run testing
-  # DO NOT RUN TRAINING HERE!
-  # LOAD THE MODEL AND RUN TEST ON THE TEST SET
+    # Always use tf.reset_default_graph() to avoid error
+    tf.reset_default_graph()
+    # TODO: Write your testing code here
+    # - Create placeholder for inputs, training boolean, dropout keep probablity
+    # - Construct your model
+    # (Above 2 steps should be the same as in train function)
+    # - Create label prediction tensor
+    # - Run testing
+    # DO NOT RUN TRAINING HERE!
+    # LOAD THE MODEL AND RUN TEST ON THE TEST SET
 
-  # Define placeholder variable for input images
-  x = tf.placeholder(tf.float32, shape=[None, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="x")
-  
-  # Define placeholder variable for true labels
-  y = tf.placeholder(tf.float32, shape=[None, NUM_CLASSES], name="y")
+    with tf.Graph().as_default() as g:
 
-  x_input = tf.reshape(x, [-1, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="input")
+        # Define placeholder variable for input images
+        x = tf.placeholder(tf.float32, shape=[None, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="x")
 
-  keep_prob = 0.5
+        x_input = tf.reshape(x, [-1, IMG_SIZE, IMG_SIZE, NUM_CHANNELS], name="input")
 
-  # Load the saved model
-  new_saver = tf.train.import_meta_graph('my-model.meta')
+        keep_prob = 0.5
 
-  with tf.Session as sess:
-    new_saver.restore(sess, tf.train.latest_checkpoint('./'))
+        output = net(x_input, False, keep_prob)
 
-  raise NotImplementedError
+        # Load the saved model
+        init = tf.global_variables_initializer()
+
+        with tf.Session() as sess:
+
+            saver = tf.train.Saver()
+            saver.restore(sess, tf.train.latest_checkpoint('.'))
+
+            feed_dict = {
+                x: cifar10_test_images,
+                'W_conv1:0': sess.run('W_conv1:0'),
+                'b_conv1:0': sess.run('b_conv1:0'),
+                'W_conv2:0': sess.run('W_conv2:0'),
+                'b_conv2:0': sess.run('b_conv2:0'),
+                'W_conv3:0': sess.run('W_conv3:0'),
+                'b_conv3:0': sess.run('b_conv3:0'),
+                'W_conv4:0': sess.run('W_conv4:0'),
+                'b_conv4:0': sess.run('b_conv4:0'),
+                'W_fc:0': sess.run('W_fc:0'),
+                'b_fc:0': sess.run('b_fc:0'),
+                # 'W_fc1:0': sess.run('W_fc1:0'),
+                # 'b_fc1:0': sess.run('b_fc1:0')
+            }
+
+            labels = []
+
+            pred = sess.run(output, feed_dict=feed_dict)
+
+            for array in pred:
+                pred_class = 0
+                max_score = array[0]
+
+                for i, num in enumerate(array):
+                    if num > max_score:
+                        max_score = num
+                        pred_class = i
+
+                labels.append([pred_class])
+
+            print(labels)
+            return np.array(labels)
